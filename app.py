@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from extraction import get_ai_msg
-from transcription import process_b64_str
+from transcription import process_b64_str, decode_base64_to_audio_file, transcribe_audio
 
 app = Flask(__name__)
 
@@ -27,6 +27,26 @@ def process_prompt():
 
         ai_response = get_ai_msg(patient_prompt)
         return jsonify(ai_response), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/conversation', methods=['POST'])
+def process_audio():
+    try:
+        data = request.json
+        b64_str = data.get('b64_str', None)
+
+        if not b64_str:
+            return jsonify({"error": "Base64 string is required."}), 400
+
+        # Decode and transcribe
+        audio_stream = decode_base64_to_audio_file(b64_str)
+        transcription = transcribe_audio(audio_stream)
+
+        # Extract details
+        structured_data = get_ai_msg(transcription)
+
+        return jsonify(structured_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
