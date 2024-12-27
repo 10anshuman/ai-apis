@@ -38,12 +38,8 @@ def process_audio():
 
         if not b64_str:
             return jsonify({"error": "Base64 string is required."}), 400
-
-        # Decode and transcribe
         audio_stream = decode_base64_to_audio_file(b64_str)
         transcription = transcribe_audio(audio_stream)
-
-        # Extract details
         structured_data = get_ai_msg(transcription)
 
         return jsonify(structured_data)
