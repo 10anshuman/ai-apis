@@ -73,19 +73,22 @@ def get_ai_msg(patient_prompt):
                     ],
                     "diagnosis":[ 
                     {
-                        "diagnosis_Name": "",
+                        "diagnosis_name": "",
                         "ICD_Code": "" (if not provided then please extract it using the internet)
                     }
                     ],
                     "allergies": [
                         {
-                            "allergies_Name": "",
+                            "allergies_name": "",
                             "ICD_Code": "" (if not provided then please extract it using the internet)
                         }
                     ],
-                    "Chief Complaint": {
-                        "Chief Complaint": "(Provide the chief complaint of the patient from the text.)"            
-                    },
+                    "Chief Complaint": [ 
+                    {
+                        "Chief Complaint": "(Provide the chief complaint of the patient from the text.)",
+                        "Duration": "Extract the duration of the chief complaint."        
+                    }
+                    ],
                     "Summary": "(Considering the above details, please provide a summary of the patient's condition.)"
                 }
             }
