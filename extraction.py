@@ -1,20 +1,29 @@
 from dotenv import load_dotenv
 import os
 import json
+import spacy
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
+import pandas as pd
 from langchain_groq import ChatGroq
 
+# Load environment variables
 load_dotenv()
 
+# Get the API key from .env file
 api_key = os.getenv("GROQ_API_KEY")
 
+# Define headers for API requests
 headers = {
     "Authorization": f"Bearer {api_key}",
     "Content-Type": "application/json"
 }
 
+# Check if API key is provided
 if api_key is None:
     raise ValueError("GROQ_API_KEY is not set in the .env file.")
 
+# Initialize the ChatGroq model
 llm = ChatGroq(
     model="mixtral-8x7b-32768",
     temperature=0,
@@ -22,16 +31,38 @@ llm = ChatGroq(
     timeout=60,
     max_retries=2,
 )
+nlp = spacy.load("en_core_web_sm")
+medicine_dataset = pd.read_csv("medicine_dataset.csv") 
+medicine_names = medicine_dataset["Medicine Name"].tolist() 
 
+# Function to correct medicine names using SpaCy and FuzzyWuzzy
+def correct_medicine_names(extracted_medicines):
+    corrected_medicines = []
+    for medicine in extracted_medicines:
+        doc = nlp(medicine)
+        for token in doc:
+            best_match, similarity = process.extractOne(token.text, medicine_names, scorer=fuzz.ratio)
+            if similarity > 85:  
+                corrected_medicines.append(best_match)
+            else:
+                corrected_medicines.append(token.text)
+    return corrected_medicines
 def extract_json(content):
     try:
-        # Try to find the JSON part in the raw response
         start = content.find("{")
         end = content.rfind("}") + 1
         if start == -1 or end == -1:
             raise ValueError("No valid JSON block found in the AI response.")
         json_str = content[start:end].strip()
-        return json.loads(json_str)
+        extracted_data = json.loads(json_str)
+        if "pharmacy" in extracted_data:
+            for medicine_entry in extracted_data["pharmacy"]:
+                if "Medicine Name" in medicine_entry:
+                    medicine_name = medicine_entry["Medicine Name"]
+                    corrected_name = correct_medicine_names([medicine_name])
+                    medicine_entry["Medicine Name"] = corrected_name[0]
+        
+        return extracted_data
     except Exception as e:
         print("Error extracting JSON:", str(e))
         raise ValueError("Failed to extract valid JSON from AI response.")
