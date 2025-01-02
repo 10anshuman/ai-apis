@@ -7,23 +7,17 @@ from fuzzywuzzy import process
 import pandas as pd
 from langchain_groq import ChatGroq
 
-# Load environment variables
 load_dotenv()
 
-# Get the API key from .env file
 api_key = os.getenv("GROQ_API_KEY")
 
-# Define headers for API requests
 headers = {
     "Authorization": f"Bearer {api_key}",
     "Content-Type": "application/json"
 }
-
-# Check if API key is provided
 if api_key is None:
     raise ValueError("GROQ_API_KEY is not set in the .env file.")
 
-# Initialize the ChatGroq model
 llm = ChatGroq(
     model="mixtral-8x7b-32768",
     temperature=0,
